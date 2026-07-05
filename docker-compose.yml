@@ -1,0 +1,20 @@
+# Local dev stack: ingestion service + PostgreSQL (stand-in local pour Aurora)
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: eip
+      POSTGRES_PASSWORD: eip
+      POSTGRES_DB: eip
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+
+  ingestion:
+    build: ./services/ingestion
+    depends_on: [db]
+    environment:
+      DATABASE_URL: postgresql+psycopg://eip:eip@db:5432/eip
+    ports: ["8080:8080"]
+
+volumes:
+  pgdata:
