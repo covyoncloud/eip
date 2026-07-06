@@ -9,7 +9,6 @@ app = FastAPI(title="EIP - Ingestion Service", version="0.1.0")
 _repository = SqlAlchemyWorkRepository()   # <-- au lieu de InMemoryWorkRepository()
 _parsers = {"csv": CsvParser(), "json": JsonParser(), "xml": XmlParser()}
 
-
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -24,6 +23,21 @@ async def ingest(file: UploadFile) -> dict[str, int | str]:
     use_case = IngestFileUseCase(parser, _repository)
     count = use_case.execute(file.file)
     return {"ingested": count}
+
+@app.get("/entities")
+def list_entities(limit: int = 50, offset: int = 0) -> list[dict]:
+    works = _repository.list_all(limit=limit, offset=offset)
+    return [
+        {
+            "work_id": w.work_id,
+            "title": w.title_raw,
+            "title_normalized": w.title_normalized,
+            "iswc": w.iswc,
+            "artists": [a.name_raw for a in w.artists],
+            "year": w.first_release_year,
+        }
+        for w in works
+    ]
 
 @app.on_event("startup")
 def create_tables() -> None:

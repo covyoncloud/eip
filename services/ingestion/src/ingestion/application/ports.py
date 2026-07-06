@@ -29,3 +29,7 @@ class WorkRepository(ABC):
     @abstractmethod
     def find_by_business_key(self, key: str) -> CanonicalWork | None:
         ...
+
+    @abstractmethod
+    def list_all(self, limit: int = 50, offset: int = 0) -> list[CanonicalWork]:
+        ...

@@ -4,5 +4,10 @@ variable "region" {
 }
 variable "owner" {
   type    = string
-  default = "optimus"
+  default = "covyoncloud"
+}
+
+variable "suffix" {
+  type        = string
+  description = "Suffixe unique pour les noms de bucket"
 }

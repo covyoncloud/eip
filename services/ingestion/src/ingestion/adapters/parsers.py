@@ -13,7 +13,6 @@ import json
 import io
 import xml.etree.ElementTree as ET
 
-from ingestion.domain.models import Artist, CanonicalWork
 from typing import BinaryIO
 from ingestion.application.ports import SourceParser
 from ingestion.domain.models import Artist, CanonicalWork

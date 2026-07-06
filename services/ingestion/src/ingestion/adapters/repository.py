@@ -37,6 +37,27 @@ class SqlAlchemyWorkRepository(WorkRepository):
                 artists=[Artist(a["raw"], a["norm"]) for a in row.artists],
                 first_release_year=row.first_release_year,
             )
+    
+    def list_all(self, limit: int = 50, offset: int = 0) -> list[CanonicalWork]:
+        with SessionLocal() as s:
+            rows = (
+                s.query(WorkORM)
+                .order_by(WorkORM.title_normalized)
+                .limit(limit)
+                .offset(offset)
+                .all()
+            )
+            return [
+                CanonicalWork(
+                    work_id=row.work_id,
+                    title_raw=row.title_raw,
+                    title_normalized=row.title_normalized,
+                    iswc=row.iswc,
+                    artists=[Artist(a["raw"], a["norm"]) for a in row.artists],
+                    first_release_year=row.first_release_year,
+                )
+                for row in rows
+            ]
 
 class InMemoryWorkRepository(WorkRepository):
     """Implémentation mémoire pour les tests (pattern à connaître)."""
@@ -49,3 +70,6 @@ class InMemoryWorkRepository(WorkRepository):
 
     def find_by_business_key(self, key: str) -> CanonicalWork | None:
         return self._store.get(key)
+    
+    def list_all(self, limit: int = 50, offset: int = 0) -> list[CanonicalWork]:
+        return list(self._store.values())[offset : offset + limit]
