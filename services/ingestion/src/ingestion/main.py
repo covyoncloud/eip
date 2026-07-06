@@ -1,16 +1,12 @@
-"""Point d'entrée FastAPI du service d'ingestion."""
-from __future__ import annotations
-
 from fastapi import FastAPI, UploadFile
-
+from ingestion.adapters.db import Base, engine
 from ingestion.adapters.parsers import CsvParser, JsonParser, XmlParser
-from ingestion.adapters.repository import InMemoryWorkRepository
+from ingestion.adapters.repository import SqlAlchemyWorkRepository   # <-- changé
 from ingestion.application.use_cases import IngestFileUseCase
 
 app = FastAPI(title="EIP - Ingestion Service", version="0.1.0")
 
-# TODO(Sprint 1): injecter le vrai repository (SQLAlchemy) via un container/dépendance
-_repository = InMemoryWorkRepository()
+_repository = SqlAlchemyWorkRepository()   # <-- au lieu de InMemoryWorkRepository()
 _parsers = {"csv": CsvParser(), "json": JsonParser(), "xml": XmlParser()}
 
 
@@ -26,5 +22,9 @@ async def ingest(file: UploadFile) -> dict[str, int | str]:
     if parser is None:
         return {"error": f"format non supporté: {fmt}"}
     use_case = IngestFileUseCase(parser, _repository)
-    count = use_case.execute(file.file)  # TODO: brancher quand les parsers sont faits
+    count = use_case.execute(file.file)
     return {"ingested": count}
+
+@app.on_event("startup")
+def create_tables() -> None:
+    Base.metadata.create_all(engine)

@@ -9,6 +9,7 @@ COPY src ./src
 FROM python:3.12-slim AS runtime
 WORKDIR /app
 COPY --from=build /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=build /usr/local/bin /usr/local/bin
 COPY --from=build /app/src ./src
 ENV PYTHONPATH=/app/src
 EXPOSE 8080
