@@ -133,3 +133,13 @@ module "pipeline" {
   app_security_group_id = aws_security_group.app.id
   database_url          = "postgresql+psycopg://eip:${module.aurora.db_password}@${module.aurora.endpoint}:5432/eip"
 }
+
+module "glue" {
+  source        = "../../modules/glue"
+  bronze_bucket = module.storage.bronze_bucket
+  bronze_arn    = module.storage.bronze_arn
+  silver_bucket = module.storage.silver_bucket
+  silver_arn    = module.storage.silver_arn
+  bronze_path   = "s3://${module.storage.bronze_bucket}/musicbrainz-test/" # 10k lignes
+  #bronze_path = "s3://${module.storage.bronze_bucket}/musicbrainz/" # 500k lignes
+}
