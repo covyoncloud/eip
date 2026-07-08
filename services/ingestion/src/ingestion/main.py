@@ -1,6 +1,5 @@
 from fastapi import FastAPI, UploadFile
 from ingestion.adapters.db import Base, engine
-from ingestion.adapters.parsers import CsvParser, JsonParser, XmlParser
 from ingestion.adapters.repository import SqlAlchemyWorkRepository  
 import boto3
 import os
@@ -10,7 +9,6 @@ BRONZE_BUCKET = os.environ["BRONZE_BUCKET"]
 s3 = boto3.client("s3") if BRONZE_BUCKET else None
 
 _repository = SqlAlchemyWorkRepository()   # <-- au lieu de InMemoryWorkRepository()
-_parsers = {"csv": CsvParser(), "json": JsonParser(), "xml": XmlParser()}
 
 @app.get("/health")
 def health() -> dict[str, str]:
