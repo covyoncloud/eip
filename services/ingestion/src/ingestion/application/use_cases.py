@@ -1,8 +1,6 @@
 """Use cases : orchestration métier, indépendante de l'infra."""
 from __future__ import annotations
 
-from ingestion.application.ports import SourceParser, WorkRepository
-
 class IngestFileUseCase:
     def __init__(self, parser, repository, dedup_index=None):
         self._parser = parser

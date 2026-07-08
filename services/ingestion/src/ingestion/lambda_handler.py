@@ -1,4 +1,6 @@
-import boto3, json, os
+import boto3
+import json
+import os
 sfn = boto3.client("stepfunctions")
 STATE_MACHINE_ARN = os.environ["STATE_MACHINE_ARN"]
 

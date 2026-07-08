@@ -2,8 +2,8 @@ from fastapi import FastAPI, UploadFile
 from ingestion.adapters.db import Base, engine
 from ingestion.adapters.parsers import CsvParser, JsonParser, XmlParser
 from ingestion.adapters.repository import SqlAlchemyWorkRepository  
-from ingestion.application.use_cases import IngestFileUseCase
-import os, boto3
+import boto3
+import os
 
 app = FastAPI(title="EIP - Ingestion Service", version="0.1.0")
 BRONZE_BUCKET = os.environ["BRONZE_BUCKET"]
