@@ -115,17 +115,17 @@ module "messaging" {
 }
 
 module "consumer" {
-  source                = "../../modules/consumer"
-  lambda_ecr_url        = aws_ecr_repository.lambda.repository_url
-  queue_arn             = module.messaging.queue_arn
-  state_machine_arn     = module.pipeline.state_machine_arn
+  source            = "../../modules/consumer"
+  lambda_ecr_url    = aws_ecr_repository.lambda.repository_url
+  queue_arn         = module.messaging.queue_arn
+  state_machine_arn = module.pipeline.state_machine_arn
 }
 
 module "pipeline" {
   source                = "../../modules/pipeline"
   lambda_ecr_url        = aws_ecr_repository.lambda.repository_url
   silver_arn            = module.storage.silver_arn
-  bronze_arn = module.storage.bronze_arn
+  bronze_arn            = module.storage.bronze_arn
   silver_bucket         = module.storage.silver_bucket
   dedup_table_arn       = module.storage.dedup_table_arn
   dedup_table_name      = module.storage.dedup_table_name
