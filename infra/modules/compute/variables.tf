@@ -41,3 +41,11 @@ variable "db_password" {
 variable "db_secret_arn" {
   type = string
 }
+
+variable "bronze_arn" {
+  type = string
+}
+
+variable "bronze_bucket" {
+  type = string
+}

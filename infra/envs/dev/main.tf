@@ -21,6 +21,10 @@ resource "aws_security_group" "app" {
   vpc_id = module.network.vpc_id
 }
 
+resource "aws_ecr_repository" "lambda" {
+  name = "eip-ingestion-lambda"
+}
+
 resource "aws_ecr_repository" "ingestion" {
   name                 = "eip-ingestion"
   image_tag_mutability = "MUTABLE"
@@ -57,6 +61,22 @@ resource "aws_security_group_rule" "app_from_alb" {
   security_group_id        = aws_security_group.app.id
 }
 
+output "messaging_queue_url" {
+  value = module.messaging.queue_url
+}
+
+resource "aws_iam_role_policy" "consumer_start_sfn" {
+  role = module.consumer.lambda_role_name
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["states:StartExecution"]
+      Resource = module.pipeline.state_machine_arn
+    }]
+  })
+}
+
 module "compute" {
   source                = "../../modules/compute"
   vpc_id                = module.network.vpc_id
@@ -66,6 +86,8 @@ module "compute" {
   db_endpoint           = module.aurora.endpoint
   db_password           = module.aurora.db_password
   db_secret_arn         = module.aurora.secret_arn
+  bronze_bucket         = module.storage.bronze_bucket
+  bronze_arn            = module.storage.bronze_arn
 }
 
 # ---- Appels de modules (à décommenter au fil des sprints) ----
@@ -84,4 +106,30 @@ module "aurora" {
   vpc_id                = module.network.vpc_id
   private_subnet_ids    = module.network.private_subnet_ids
   app_security_group_id = aws_security_group.app.id
+}
+
+module "messaging" {
+  source        = "../../modules/messaging"
+  bronze_bucket = module.storage.bronze_bucket
+  bronze_arn    = module.storage.bronze_arn
+}
+
+module "consumer" {
+  source                = "../../modules/consumer"
+  lambda_ecr_url        = aws_ecr_repository.lambda.repository_url
+  queue_arn             = module.messaging.queue_arn
+  state_machine_arn     = module.pipeline.state_machine_arn
+}
+
+module "pipeline" {
+  source                = "../../modules/pipeline"
+  lambda_ecr_url        = aws_ecr_repository.lambda.repository_url
+  silver_arn            = module.storage.silver_arn
+  bronze_arn = module.storage.bronze_arn
+  silver_bucket         = module.storage.silver_bucket
+  dedup_table_arn       = module.storage.dedup_table_arn
+  dedup_table_name      = module.storage.dedup_table_name
+  private_subnet_ids    = module.network.private_subnet_ids
+  app_security_group_id = aws_security_group.app.id
+  database_url          = "postgresql+psycopg://eip:${module.aurora.db_password}@${module.aurora.endpoint}:5432/eip"
 }

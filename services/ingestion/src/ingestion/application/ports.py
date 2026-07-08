@@ -18,7 +18,6 @@ class SourceParser(ABC):
     def parse(self, stream: BinaryIO) -> list[CanonicalWork]:
         ...
 
-
 class WorkRepository(ABC):
     """Port outbound : persistance des oeuvres canoniques."""
 
@@ -32,4 +31,15 @@ class WorkRepository(ABC):
 
     @abstractmethod
     def list_all(self, limit: int = 50, offset: int = 0) -> list[CanonicalWork]:
+        ...
+
+class DedupIndex(ABC):
+    """Port : index rapide pour savoir si une œuvre a déjà été vue."""
+
+    @abstractmethod
+    def exists(self, business_key: str) -> bool:
+        ...
+
+    @abstractmethod
+    def register(self, business_key: str, work_id: str) -> None:
         ...

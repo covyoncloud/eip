@@ -36,6 +36,30 @@ resource "aws_iam_role_policy" "read_secret" {
   })
 }
 
+resource "aws_iam_role" "task" {
+  name = "${var.project}-${var.env}-task"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "ecs-tasks.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "task_s3" {
+  role = aws_iam_role.task.name
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["s3:PutObject"]
+      Resource = "${var.bronze_arn}/*"
+    }]
+  })
+}
+
 # ---- Définition de la tâche : QUEL conteneur, avec quelles ressources ----
 resource "aws_ecs_task_definition" "this" {
   family                   = "${var.project}-${var.env}"
@@ -44,6 +68,7 @@ resource "aws_ecs_task_definition" "this" {
   cpu                      = "256"
   memory                   = "512"
   execution_role_arn       = aws_iam_role.execution.arn
+  task_role_arn            = aws_iam_role.task.arn
 
   container_definitions = jsonencode([{
     name         = "ingestion"
@@ -51,7 +76,8 @@ resource "aws_ecs_task_definition" "this" {
     essential    = true
     portMappings = [{ containerPort = 8080 }]
     environment = [
-      { name = "DATABASE_URL", value = "postgresql+psycopg://eip:${var.db_password}@${var.db_endpoint}:5432/eip" }
+      { name = "DATABASE_URL", value = "postgresql+psycopg://eip:${var.db_password}@${var.db_endpoint}:5432/eip" },
+      { name = "BRONZE_BUCKET", value = var.bronze_bucket }
     ]
     logConfiguration = {
       logDriver = "awslogs"

@@ -1,10 +1,13 @@
 from fastapi import FastAPI, UploadFile
 from ingestion.adapters.db import Base, engine
 from ingestion.adapters.parsers import CsvParser, JsonParser, XmlParser
-from ingestion.adapters.repository import SqlAlchemyWorkRepository   # <-- changé
+from ingestion.adapters.repository import SqlAlchemyWorkRepository  
 from ingestion.application.use_cases import IngestFileUseCase
+import os, boto3
 
 app = FastAPI(title="EIP - Ingestion Service", version="0.1.0")
+BRONZE_BUCKET = os.environ["BRONZE_BUCKET"]
+s3 = boto3.client("s3") if BRONZE_BUCKET else None
 
 _repository = SqlAlchemyWorkRepository()   # <-- au lieu de InMemoryWorkRepository()
 _parsers = {"csv": CsvParser(), "json": JsonParser(), "xml": XmlParser()}
@@ -13,16 +16,13 @@ _parsers = {"csv": CsvParser(), "json": JsonParser(), "xml": XmlParser()}
 def health() -> dict[str, str]:
     return {"status": "ok"}
 
-
-@app.post("/ingest")
-async def ingest(file: UploadFile) -> dict[str, int | str]:
-    fmt = (file.filename or "").split(".")[-1].lower()
-    parser = _parsers.get(fmt)
-    if parser is None:
-        return {"error": f"format non supporté: {fmt}"}
-    use_case = IngestFileUseCase(parser, _repository)
-    count = use_case.execute(file.file)
-    return {"ingested": count}
+@app.post("/ingest", status_code=202)
+async def ingest(file: UploadFile):
+    if not BRONZE_BUCKET:
+        return {"error": "BRONZE_BUCKET non configuré (local)"}
+    key = f"uploads/{file.filename}"
+    s3.upload_fileobj(file.file, BRONZE_BUCKET, key)
+    return {"status": "accepted", "key": key}
 
 @app.get("/entities")
 def list_entities(limit: int = 50, offset: int = 0) -> list[dict]:
